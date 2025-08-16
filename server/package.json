@@ -14,10 +14,8 @@
     "postbuild": "npm run migrate:postgres"
   },
   "dependencies": {
-    "@types/better-sqlite3": "^7.6.13",
     "@types/uuid": "^10.0.0",
     "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^12.2.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
@@ -25,7 +23,6 @@
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.11.3",
-    "sqlite3": "^5.1.7",
     "uuid": "^11.1.0",
     "zod": "^3.22.4"
   },

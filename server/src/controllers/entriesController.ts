@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import db from '../database/sqlite-connection';
 import { v4 as uuidv4 } from 'uuid';
-import { CreateEntryRequest, UpdateEntryRequest, ApiResponse } from '../types';
+import pool from '../database/postgres-connection.js';
+import { ApiResponse } from '../types/index.js';
+import { CreateEntryRequest, UpdateEntryRequest } from '../types';
 import { AuthenticatedRequest } from '../middleware/auth';
 
 export const getEntries = async (
