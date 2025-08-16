@@ -5,19 +5,23 @@ import { ApiResponse } from '../types/index.js';
 import { CreateEntryRequest, UpdateEntryRequest } from '../types';
 import { AuthenticatedRequest } from '../middleware/auth';
 
-export const getEntries = async (
-  req: AuthenticatedRequest,
-  res: Response<ApiResponse>
-) => {
+export const getEntries = async (req: AuthenticatedRequest, res: Response<ApiResponse>) => {
   try {
-    const entries = db.prepare(
-      'SELECT id, encrypted_data, created_at, updated_at FROM entries WHERE user_id = ? ORDER BY created_at DESC'
-    ).all(req.userId);
+    const client = await pool.connect();
     
-    res.json({
-      success: true,
-      data: entries
-    });
+    try {
+      const result = await client.query(
+        'SELECT id, encrypted_data, created_at, updated_at FROM entries WHERE user_id = $1 ORDER BY created_at DESC',
+        [req.userId]
+      );
+      
+      res.json({
+        success: true,
+        data: result.rows
+      });
+    } finally {
+      client.release();
+    }
     
   } catch (error) {
     console.error('Get entries error:', error);
@@ -28,31 +32,68 @@ export const getEntries = async (
   }
 };
 
+export const getEntry = async (req: AuthenticatedRequest, res: Response<ApiResponse>) => {
+  try {
+    const { id } = req.params;
+    const client = await pool.connect();
+    
+    try {
+      const result = await client.query(
+        'SELECT id, encrypted_data, created_at, updated_at FROM entries WHERE id = $1 AND user_id = $2',
+        [id, req.userId]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Entry not found'
+        });
+      }
+      
+      res.json({
+        success: true,
+        data: result.rows[0]
+      });
+    } finally {
+      client.release();
+    }
+    
+  } catch (error) {
+    console.error('Get entry error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error while fetching entry'
+    });
+  }
+};
+
 export const createEntry = async (
   req: AuthenticatedRequest,
   res: Response<ApiResponse>
 ) => {
-  const { encryptedData } = req.body;
-  
   try {
+    const { encryptedData } = req.body;
     const entryId = uuidv4();
-    const insertEntry = db.prepare(
-      'INSERT INTO entries (id, user_id, encrypted_data) VALUES (?, ?, ?)'
-    );
+    const client = await pool.connect();
     
-    insertEntry.run(entryId, req.userId, encryptedData);
-    
-    const entry = {
-      id: entryId,
-      encrypted_data: encryptedData,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    
-    res.status(201).json({
-      success: true,
-      data: entry
-    });
+    try {
+      await client.query(
+        'INSERT INTO entries (id, user_id, encrypted_data) VALUES ($1, $2, $3)',
+        [entryId, req.userId, encryptedData]
+      );
+      
+      const result = await client.query(
+        'SELECT id, encrypted_data, created_at, updated_at FROM entries WHERE id = $1',
+        [entryId]
+      );
+      
+      res.status(201).json({
+        success: true,
+        data: result.rows[0]
+      });
+    } finally {
+      client.release();
+    }
     
   } catch (error) {
     console.error('Create entry error:', error);
@@ -67,40 +108,31 @@ export const updateEntry = async (
   req: AuthenticatedRequest,
   res: Response<ApiResponse>
 ) => {
-  const { id } = req.params;
-  const { encryptedData } = req.body;
-  
   try {
-    // First check if entry exists and belongs to user
-    const existingEntry = db.prepare(
-      'SELECT id FROM entries WHERE id = ? AND user_id = ?'
-    ).get(id, req.userId);
+    const { id } = req.params;
+    const { encryptedData } = req.body;
+    const client = await pool.connect();
     
-    if (!existingEntry) {
-      return res.status(404).json({
-        success: false,
-        error: 'Entry not found or access denied'
+    try {
+      const result = await client.query(
+        'UPDATE entries SET encrypted_data = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3 RETURNING id, encrypted_data, created_at, updated_at',
+        [encryptedData, id, req.userId]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Entry not found'
+        });
+      }
+      
+      res.json({
+        success: true,
+        data: result.rows[0]
       });
+    } finally {
+      client.release();
     }
-    
-    // Update the entry
-    const updateEntry = db.prepare(
-      'UPDATE entries SET encrypted_data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?'
-    );
-    
-    updateEntry.run(encryptedData, id, req.userId);
-    
-    const updatedEntry = {
-      id,
-      encrypted_data: encryptedData,
-      created_at: (existingEntry as any).created_at,
-      updated_at: new Date().toISOString()
-    };
-    
-    res.json({
-      success: true,
-      data: updatedEntry
-    });
     
   } catch (error) {
     console.error('Update entry error:', error);
@@ -111,30 +143,31 @@ export const updateEntry = async (
   }
 };
 
-export const deleteEntry = async (
-  req: AuthenticatedRequest,
-  res: Response<ApiResponse>
-) => {
-  const { id } = req.params;
-  
+export const deleteEntry = async (req: AuthenticatedRequest, res: Response<ApiResponse>) => {
   try {
-    const deleteEntry = db.prepare(
-      'DELETE FROM entries WHERE id = ? AND user_id = ?'
-    );
+    const { id } = req.params;
+    const client = await pool.connect();
     
-    const result = deleteEntry.run(id, req.userId);
-    
-    if (result.changes === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'Entry not found or access denied'
+    try {
+      const result = await client.query(
+        'DELETE FROM entries WHERE id = $1 AND user_id = $2 RETURNING id',
+        [id, req.userId]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Entry not found'
+        });
+      }
+      
+      res.json({
+        success: true,
+        message: 'Entry deleted successfully'
       });
+    } finally {
+      client.release();
     }
-    
-    res.json({
-      success: true,
-      message: 'Entry deleted successfully'
-    });
     
   } catch (error) {
     console.error('Delete entry error:', error);

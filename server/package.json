@@ -9,7 +9,7 @@
     "start": "node dist/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
-    "migrate": "tsx src/database/sqlite-migrate.ts",
+    "migrate": "tsx src/database/postgres-migrate.ts",
     "migrate:postgres": "tsx src/database/postgres-migrate.ts",
     "postbuild": "npm run migrate:postgres"
   },
