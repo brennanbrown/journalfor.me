@@ -53,8 +53,27 @@ export default defineConfig({
       }
     })
   ],
+  define: {
+    'process.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || 'https://journalforme-production.up.railway.app')
+  },
   build: {
     target: 'esnext',
-    sourcemap: true
+    outDir: 'dist',
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['crypto-js', 'idb']
+        }
+      }
+    }
+  },
+  server: {
+    port: 5173,
+    host: true
+  },
+  preview: {
+    port: 5174,
+    host: true
   }
 })
