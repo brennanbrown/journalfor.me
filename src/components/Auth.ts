@@ -304,6 +304,9 @@ function setupLoginForm(): void {
       localStorage.setItem('journal-user-email', email)
       console.log('💾 Session data stored for persistence')
       
+      // Trigger user menu update immediately
+      window.dispatchEvent(new CustomEvent('userStateChanged'))
+      
       console.log('🧭 Dispatching navigation to /')
       window.dispatchEvent(new CustomEvent('navigate', { 
         detail: { path: '/', replace: true } 

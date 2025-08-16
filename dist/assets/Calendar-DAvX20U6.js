@@ -1,4 +1,4 @@
-import{a as f}from"./index-Cyaz7mcM.js";let a=new Date;function T(){const t=document.getElementById("main-content");t&&(t.innerHTML=`
+import{a as f}from"./index-BduBbZtS.js";let a=new Date;function T(){const t=document.getElementById("main-content");t&&(t.innerHTML=`
     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <div class="mb-6 flex justify-between items-center">
         <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Calendar</h1>
@@ -67,4 +67,4 @@ import{a as f}from"./index-Cyaz7mcM.js";let a=new Date;function T(){const t=docu
         </div>
       </div>
     `),r.setDate(r.getDate()+1)}return o.join("")}function x(){const t=document.getElementById("current-month");t&&(t.textContent=a.toLocaleDateString("en-US",{month:"long",year:"numeric"}))}function h(){const t=document.getElementById("calendar-grid");t&&(t.innerHTML=b(),document.querySelectorAll(".calendar-day").forEach(d=>{d.addEventListener("click",m=>{const n=m.currentTarget.getAttribute("data-date");if(n){const e=f.getState().entries.filter(o=>new Date(o.createdAt).toISOString().split("T")[0]===n);e.length>0?window.dispatchEvent(new CustomEvent("navigate",{detail:{path:`/entry/${e[0].id}`}})):window.dispatchEvent(new CustomEvent("navigate",{detail:{path:`/write?date=${n}`}}))}})}))}function M(){document.getElementById("prev-month")?.addEventListener("click",()=>{a.setMonth(a.getMonth()-1),x(),h()}),document.getElementById("next-month")?.addEventListener("click",()=>{a.setMonth(a.getMonth()+1),x(),h()}),document.getElementById("today-btn")?.addEventListener("click",()=>{a=new Date,x(),h()}),document.querySelectorAll(".calendar-day").forEach(t=>{t.addEventListener("click",d=>{const s=d.currentTarget.getAttribute("data-date");if(s){const i=f.getState().entries.filter(e=>new Date(e.createdAt).toISOString().split("T")[0]===s);i.length>0?window.dispatchEvent(new CustomEvent("navigate",{detail:{path:`/entry/${i[0].id}`}})):window.dispatchEvent(new CustomEvent("navigate",{detail:{path:`/write?date=${s}`}}))}})})}export{T as renderCalendar};
-//# sourceMappingURL=Calendar-CFzmKCn_.js.map
+//# sourceMappingURL=Calendar-DAvX20U6.js.map

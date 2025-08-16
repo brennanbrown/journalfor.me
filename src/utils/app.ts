@@ -52,19 +52,26 @@ export async function initializeApp(): Promise<void> {
           return
         }
         
-        // Validate credentials before full initialization
-        const validation = await appStore.storage.validateUserCredentials(userEmail, sessionPassword)
-        if (!validation.exists || !validation.passwordValid) {
-          console.log('🔐 Session validation failed, clearing session')
+        // Try to initialize with session password directly
+        try {
+          await appStore.initialize(sessionPassword)
+          console.log('🎉 Session restored successfully!')
+          
+          // Verify the user is actually logged in
+          const state = appStore.getState()
+          if (!state.user) {
+            throw new Error('Session restoration failed - no user in state')
+          }
+          
+          console.log('✅ User session verified:', state.user.email)
+        } catch (sessionError) {
+          console.log('🔐 Session restoration failed:', sessionError)
           sessionStorage.removeItem('journal-session-key')
           localStorage.removeItem('journal-user-email')
           await appStore.initialize()
           router.start()
           return
         }
-        
-        await appStore.initialize(sessionPassword)
-        console.log('🎉 Session restored successfully!')
         
         // Trigger user menu update after successful session restore
         setTimeout(() => {
