@@ -53,9 +53,13 @@ export class StorageManager {
         }
       })
       
-      // Disable server for now - it's broken
-      this.serverAvailable = false
-      console.log('🌐 Server disabled - local-only mode')
+      // Check server health
+      this.serverAvailable = await apiClient.healthCheck()
+      if (this.serverAvailable) {
+        console.log('🌐 Server available - online mode')
+      } else {
+        console.log('🌐 Server unavailable - offline mode')
+      }
       
       // Initialize encryption
       if (masterPassword) {
@@ -558,16 +562,54 @@ export class StorageManager {
   async registerUser(email: string, password: string, user: User): Promise<void> {
     if (!this.encryptionKey) throw new Error('Encryption key not available')
     
-    // Save user locally only - server is broken
+    // Save user locally first
     await this.saveUser(user)
-    console.log(`💾 User registered locally: ${user.email}`)
+    
+    // Sync to server if available
+    if (this.serverAvailable) {
+      try {
+        const passwordHash = CryptoJS.SHA256(password).toString()
+        const encryptedUserData = this.encrypt(JSON.stringify(user))
+        
+        const authResponse = await apiClient.register(email, passwordHash, encryptedUserData)
+        console.log(`☁️ User registered on server: ${authResponse.user.email}`)
+        
+        // Store the server user data
+        const serverUser = JSON.parse(this.decrypt(authResponse.user.encryptedData)) as User
+        await this.saveUser(serverUser)
+      } catch (error) {
+        console.warn('Failed to register user on server:', error)
+        // User is still registered locally
+      }
+    }
   }
 
   /**
    * Login user with server sync
    */
   async loginUser(email: string, password: string): Promise<User> {
-    // Always use local login for now - server is broken
+    const passwordHash = CryptoJS.SHA256(password).toString()
+    
+    // Try server login first if available
+    if (this.serverAvailable) {
+      try {
+        const authResponse = await apiClient.login(email, passwordHash)
+        console.log(`☁️ User logged in from server: ${authResponse.user.email}`)
+        
+        // Decrypt and save user data locally
+        const serverUser = JSON.parse(this.decrypt(authResponse.user.encryptedData)) as User
+        await this.saveUser(serverUser)
+        
+        // Sync entries from server
+        await this.syncFromServer()
+        
+        return serverUser
+      } catch (error) {
+        console.warn('Server login failed, trying local login:', error)
+      }
+    }
+    
+    // Fallback to local login
     const validation = await this.validateUserCredentials(email, password)
     if (!validation.passwordValid || !validation.user) {
       throw new Error('Invalid email or password')
