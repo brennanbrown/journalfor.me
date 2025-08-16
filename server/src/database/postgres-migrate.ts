@@ -1,4 +1,4 @@
-import pool from './postgres-connection.js';
+import pool from './postgres-connection';
 
 export async function createTables() {
   const client = await pool.connect();

@@ -78,10 +78,12 @@ app.use((error: any, req: express.Request, res: express.Response<ApiResponse>, n
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Journal for Me API server running on port ${PORT}`);
-  console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔒 CORS enabled for: ${allowedOrigins.join(', ')}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Journal for Me API server running on port ${PORT}`);
+    console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔒 CORS enabled for: ${allowedOrigins.join(', ')}`);
+  });
+}
 
 export default app;

@@ -1,5 +1,11 @@
 import { Router } from 'express';
-import { register, login } from '../controllers/authController';
+let authController: any;
+if (process.env.NODE_ENV === 'test') {
+  authController = require('../controllers/authController-test');
+} else {
+  authController = require('../controllers/authController');
+}
+const { register, login } = authController;
 import { validateRegister, validateLogin } from '../middleware/validation';
 
 const router = Router();

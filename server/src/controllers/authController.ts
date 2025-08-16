@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import pool from '../database/postgres-connection.js';
+import pool from '../database/postgres-connection';
 import { ApiResponse } from '../types/index.js';
 
 interface RegisterRequest {
