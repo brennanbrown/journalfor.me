@@ -135,10 +135,17 @@ export class StorageManager {
     }
     try {
       const bytes = CryptoJS.AES.decrypt(encryptedText, this.encryptionKey)
-      return bytes.toString(CryptoJS.enc.Utf8)
+      const decryptedData = bytes.toString(CryptoJS.enc.Utf8)
+      
+      // Validate that decryption actually worked
+      if (!decryptedData || decryptedData.length === 0) {
+        throw new Error('Decryption resulted in empty data')
+      }
+      
+      return decryptedData
     } catch (error) {
       console.error('Decryption failed:', error)
-      return encryptedText
+      throw error // Re-throw to let caller handle the error
     }
   }
   
@@ -326,11 +333,19 @@ export class StorageManager {
       const bytes = CryptoJS.AES.decrypt(userData, tempEncryptionKey)
       const decryptedData = bytes.toString(CryptoJS.enc.Utf8)
       
-      if (!decryptedData) {
+      // Check if decryption actually worked by validating the result
+      if (!decryptedData || decryptedData.length === 0) {
         return { exists: true, passwordValid: false }
       }
       
-      const user = JSON.parse(decryptedData) as User
+      // Additional validation: ensure it's valid UTF-8 and JSON
+      let user: User
+      try {
+        user = JSON.parse(decryptedData) as User
+      } catch (jsonError) {
+        // If JSON parsing fails, the password is likely wrong
+        return { exists: true, passwordValid: false }
+      }
       
       // Check if email matches
       if (!user.email || user.email.toLowerCase() !== email.toLowerCase()) {
