@@ -158,14 +158,15 @@ export class ServerSyncTests {
       ;(this.storage as any).serverAvailable = false
 
       const testEntry: JournalEntry = {
-        id: 'offline_test_entry_' + Date.now(),
-        title: 'Offline Test Entry',
-        content: 'This entry was created while offline.',
-        tags: ['offline', 'test'],
+        id: 'conflict-entry',
+        title: 'Conflict Entry',
+        content: 'This entry will have conflicts',
+        tags: ['conflict'],
         createdAt: new Date(),
         updatedAt: new Date(),
         isFavorite: false,
-        isEncrypted: true
+        isEncrypted: true,
+        wordCount: 6
       }
 
       // Should still work offline
@@ -188,14 +189,15 @@ export class ServerSyncTests {
     try {
       // Create an entry
       const testEntry: JournalEntry = {
-        id: 'conflict_test_entry_' + Date.now(),
-        title: 'Conflict Test Entry',
-        content: 'Original content',
-        tags: ['conflict', 'test'],
+        id: 'test-entry-2',
+        title: 'Another Test Entry',
+        content: 'This is another test entry',
+        tags: ['test', 'sync'],
         createdAt: new Date(),
         updatedAt: new Date(),
         isFavorite: false,
-        isEncrypted: true
+        isEncrypted: true,
+        wordCount: 5
       }
 
       await this.storage.saveEntry(testEntry)

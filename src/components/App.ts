@@ -1,7 +1,7 @@
 /**
  * Main application component
  */
-import { appStore } from '../stores/AppStore'
+// import { appStore } from '../stores/AppStore.js'; // Unused in this file
 
 /**
  * Render the main application

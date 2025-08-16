@@ -1,14 +1,21 @@
 import Database from 'better-sqlite3';
 import { join } from 'path';
-import dotenv from 'dotenv';
+import { mkdirSync, existsSync } from 'fs';
 
-dotenv.config();
+// Use memory database for CI/testing, file database for development
+let db: Database.Database;
 
-const dbPath = process.env.NODE_ENV === 'test' 
-  ? ':memory:' 
-  : join(__dirname, '../../data/journalfor_me.db');
-
-const db = new Database(dbPath);
+if (process.env.CI || process.env.NODE_ENV === 'test') {
+  // Use in-memory database for CI/testing
+  db = new Database(':memory:');
+} else {
+  // Ensure data directory exists for development
+  const dataDir = './data';
+  if (!existsSync(dataDir)) {
+    mkdirSync(dataDir, { recursive: true });
+  }
+  db = new Database(join(dataDir, 'journal.db'));
+}
 
 // Enable foreign keys
 db.pragma('foreign_keys = ON');
