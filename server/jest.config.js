@@ -11,5 +11,4 @@ module.exports = {
     '!src/**/*.d.ts',
     '!src/database/migrate.ts',
   ],
-  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
 };
