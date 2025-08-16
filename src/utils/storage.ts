@@ -466,24 +466,28 @@ export class StorageManager {
         return
       }
       
-      // Try to decrypt existing user data
-      for (const userItem of users) {
-        try {
-          if (this.encryptionKey && userItem.data) {
-            // userItem.data is now properly typed as string (encrypted JSON)
-            const decryptedData = this.decrypt(userItem.data)
-            JSON.parse(decryptedData) // Verify it's valid JSON
+      // Try to decrypt existing user data only if we have an encryption key
+      if (this.encryptionKey && users.length > 0) {
+        for (const userItem of users) {
+          try {
+            if (userItem.data) {
+              // Try to decrypt - if it fails, the data is corrupted
+              const decryptedData = this.decrypt(userItem.data)
+              JSON.parse(decryptedData) // Verify it's valid JSON
+            }
+          } catch (error) {
+            console.log('🧹 Found corrupted user data - clearing all data')
+            await this.clearAllData()
+            return
           }
-        } catch (error) {
-          console.log('🧹 Found corrupted user data - clearing all data')
-          await this.clearAllData()
-          return
         }
       }
     } catch (error) {
       console.error('Error during cleanup:', error)
-      // If there are any issues, clear everything to start fresh
-      await this.clearAllData()
+      // Only clear data if it's a critical error, not just decryption failures
+      if (error instanceof Error && !error.message.includes('Malformed UTF-8')) {
+        await this.clearAllData()
+      }
     }
   }
   
