@@ -83,9 +83,11 @@ export class StorageManager {
           throw new Error('Authentication failed - unable to access user data with provided password')
         }
       } else {
-        // Check if user exists and prompt for password
+        // Check if user exists - if so, we need password for login, not registration
         if (await this.hasExistingUser()) {
-          throw new Error('Master password required for existing user')
+          console.log('👤 Existing user found - password required for login')
+          // Don't throw error - let the app handle login flow
+          return
         }
         console.log('🆕 No user data found - ready for registration')
       }
