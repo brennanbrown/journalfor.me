@@ -274,30 +274,14 @@ function setupLoginForm(): void {
     setLoading(true)
 
     try {
-      // First validate credentials to give specific error messages
-      const validation = await appStore.storage.validateUserCredentials(email, password)
+      // Use the new server-sync login method
+      const user = await appStore.storage.loginUser(email, password)
       
-      if (!validation.exists) {
-        showError('No account found with this email address. Please check your email or create a new account.')
-        return
-      }
-      
-      if (!validation.passwordValid) {
-        showError('Incorrect password. Please check your password and try again.')
-        return
-      }
-      
-      // Now initialize with validated credentials
+      // Initialize app store with the logged-in user
       await appStore.initialize(password)
       
-      // Check if user is actually logged in
-      const state = appStore.getState()
-      if (!state.user) {
-        throw new Error('Login failed - initialization error')
-      }
-      
       // If successful, navigate to dashboard
-      console.log('✅ Login successful!', state.user.email)
+      console.log('✅ Login successful!', user.email)
       
       // Store session key for persistence
       sessionStorage.setItem('journal-session-key', password)
@@ -416,8 +400,10 @@ function setupRegisterForm(): void {
         }
       }
       
-      // Create new user
+      // Create new user with server sync
       const user = await appStore.createUser(email, password)
+      
+      // Register with server (handled internally by createUser)
       
       // Verify user is set in store
       const state = appStore.getState()

@@ -219,8 +219,8 @@ export class AppStore {
     // First, re-initialize storage with the new password to set encryption key
     await this.storage.initialize(masterPassword)
     
-    // Now save the user with encryption
-    await this.storage.saveUser(user)
+    // Register user with server sync
+    await this.storage.registerUser(email, masterPassword, user)
     this.updateState({ user })
     
     return user

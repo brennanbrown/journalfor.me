@@ -1,4 +1,4 @@
-name: Production Readiness Tests
+name: Hybrid Architecture CI/CD
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  production-tests:
+  frontend-tests:
     runs-on: ubuntu-latest
     
     steps:
@@ -16,13 +16,16 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '24'
         cache: 'npm'
     
-    - name: Install dependencies
+    - name: Install frontend dependencies
       run: npm ci
     
-    - name: Build application
+    - name: Run TypeScript check
+      run: npm run type-check
+    
+    - name: Build frontend
       run: npm run build
     
     - name: Start preview server
@@ -31,8 +34,60 @@ jobs:
     - name: Wait for server
       run: sleep 5
     
-    - name: Run production tests
-      run: npm run test:production
+    - name: Run frontend tests
+      run: npm run test
     
     - name: Stop preview server
       run: pkill -f "vite preview" || true
+
+  backend-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+        cache: 'npm'
+        cache-dependency-path: 'server/package-lock.json'
+    
+    - name: Install backend dependencies
+      run: |
+        cd server
+        npm ci
+    
+    - name: Run database migration
+      run: |
+        cd server
+        npm run migrate
+    
+    - name: Run backend tests
+      run: |
+        cd server
+        npm test
+      env:
+        NODE_ENV: test
+        JWT_SECRET: test-jwt-secret-for-ci
+        DATABASE_URL: ':memory:'
+
+  security-audit:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+        cache: 'npm'
+    
+    - name: Audit frontend dependencies
+      run: npm audit --audit-level=moderate
+    
+    - name: Audit backend dependencies
+      run: |
+        cd server
+        npm audit --audit-level=moderate

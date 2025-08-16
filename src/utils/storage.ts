@@ -1,6 +1,7 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb'
 import CryptoJS from 'crypto-js'
 import type { JournalEntry, User, StorageItem } from '../types'
+import { apiClient, type ServerEntry } from './api'
 
 /**
  * Database schema for IndexedDB
@@ -29,6 +30,8 @@ export class StorageManager {
   private readonly dbName = 'journalfor-me'
   private readonly dbVersion = 1
   private encryptionKey: string | null = null
+  private serverAvailable: boolean = false
+  private syncInProgress: boolean = false
   
   /**
    * Initialize the storage system
@@ -49,6 +52,10 @@ export class StorageManager {
           db.createObjectStore('settings', { keyPath: 'id' })
         }
       })
+      
+      // Check server availability
+      this.serverAvailable = await apiClient.healthCheck()
+      console.log(`🌐 Server ${this.serverAvailable ? 'available' : 'unavailable'} - ${this.serverAvailable ? 'online' : 'offline'} mode`)
       
       // Initialize encryption
       if (masterPassword) {
@@ -136,7 +143,7 @@ export class StorageManager {
   }
   
   /**
-   * Save a journal entry with encryption
+   * Save a journal entry with encryption and server sync
    */
   async saveEntry(entry: JournalEntry): Promise<void> {
     if (!this.db) throw new Error('Storage not initialized')
@@ -156,8 +163,21 @@ export class StorageManager {
       updatedAt: new Date()
     }
     
+    // Save locally first
     await this.db.put('entries', storageItem)
-    console.log(`💾 Entry saved: ${entry.title} (${entry.isEncrypted ? 'encrypted' : 'plain'})`)
+    console.log(`💾 Entry saved locally: ${entry.title} (${entry.isEncrypted ? 'encrypted' : 'plain'})`)
+    
+    // Sync to server if available
+    if (this.serverAvailable && !this.syncInProgress) {
+      try {
+        const encryptedData = JSON.stringify(encryptedEntry)
+        await apiClient.createEntry(encryptedData)
+        console.log(`☁️ Entry synced to server: ${entry.id}`)
+      } catch (error) {
+        console.warn('Failed to sync entry to server:', error)
+        // Entry is still saved locally, sync will retry later
+      }
+    }
   }
   
   /**
@@ -183,10 +203,15 @@ export class StorageManager {
   }
   
   /**
-   * Get all journal entries with decryption
+   * Get all journal entries with decryption and server sync
    */
   async getAllEntries(): Promise<JournalEntry[]> {
     if (!this.db) throw new Error('Storage not initialized')
+    
+    // Sync from server first if available
+    if (this.serverAvailable && !this.syncInProgress) {
+      await this.syncFromServer()
+    }
     
     const items = await this.db.getAll('entries')
     return items
@@ -462,5 +487,111 @@ export class StorageManager {
     }, 0)
     
     return { entriesCount, totalSize }
+  }
+
+  /**
+   * Sync entries from server to local storage
+   */
+  private async syncFromServer(): Promise<void> {
+    if (!this.serverAvailable || this.syncInProgress) return
+    
+    this.syncInProgress = true
+    
+    try {
+      const serverEntries = await apiClient.getEntries()
+      console.log(`☁️ Fetched ${serverEntries.length} entries from server`)
+      
+      for (const serverEntry of serverEntries) {
+        try {
+          // Parse the encrypted entry data
+          const encryptedEntry = JSON.parse(serverEntry.encryptedData) as JournalEntry
+          
+          // Check if we already have this entry locally
+          const existingEntry = await this.db!.get('entries', serverEntry.id)
+          
+          if (!existingEntry || new Date(serverEntry.updatedAt) > existingEntry.updatedAt) {
+            // Server version is newer, update local copy
+            const storageItem: StorageItem<JournalEntry> = {
+              id: serverEntry.id,
+              data: encryptedEntry,
+              createdAt: new Date(serverEntry.createdAt),
+              updatedAt: new Date(serverEntry.updatedAt)
+            }
+            
+            await this.db!.put('entries', storageItem)
+            console.log(`🔄 Synced entry from server: ${serverEntry.id}`)
+          }
+        } catch (error) {
+          console.warn(`Failed to sync entry ${serverEntry.id}:`, error)
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to sync from server:', error)
+      this.serverAvailable = false // Mark server as unavailable
+    } finally {
+      this.syncInProgress = false
+    }
+  }
+
+  /**
+   * Register user with server sync
+   */
+  async registerUser(email: string, password: string, user: User): Promise<void> {
+    if (!this.encryptionKey) throw new Error('Encryption key not available')
+    
+    // Save user locally first
+    await this.saveUser(user)
+    
+    // Sync to server if available
+    if (this.serverAvailable) {
+      try {
+        const passwordHash = CryptoJS.SHA256(password).toString()
+        const encryptedUserData = this.encrypt(JSON.stringify(user))
+        
+        const authResponse = await apiClient.register(email, passwordHash, encryptedUserData)
+        console.log(`☁️ User registered on server: ${authResponse.user.email}`)
+        
+        // Store the server user data
+        const serverUser = JSON.parse(this.decrypt(authResponse.user.encryptedData)) as User
+        await this.saveUser(serverUser)
+      } catch (error) {
+        console.warn('Failed to register user on server:', error)
+        // User is still registered locally
+      }
+    }
+  }
+
+  /**
+   * Login user with server sync
+   */
+  async loginUser(email: string, password: string): Promise<User> {
+    const passwordHash = CryptoJS.SHA256(password).toString()
+    
+    // Try server login first if available
+    if (this.serverAvailable) {
+      try {
+        const authResponse = await apiClient.login(email, passwordHash)
+        console.log(`☁️ User logged in from server: ${authResponse.user.email}`)
+        
+        // Decrypt and save user data locally
+        const serverUser = JSON.parse(this.decrypt(authResponse.user.encryptedData)) as User
+        await this.saveUser(serverUser)
+        
+        // Sync entries from server
+        await this.syncFromServer()
+        
+        return serverUser
+      } catch (error) {
+        console.warn('Server login failed, trying local login:', error)
+      }
+    }
+    
+    // Fallback to local login
+    const validation = await this.validateUserCredentials(email, password)
+    if (!validation.passwordValid || !validation.user) {
+      throw new Error('Invalid email or password')
+    }
+    
+    return validation.user
   }
 }

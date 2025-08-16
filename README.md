@@ -2,15 +2,17 @@
 
 ![Journal for Me - Dashboard Screenshot](site-screenshot.png)
 
-A minimalist, secure personal journal application with offline capabilities, built as a Progressive Web App (PWA).
+A minimalist, secure personal journal application with **cross-device sync** and offline capabilities, built as a Progressive Web App (PWA) with zero-knowledge encryption.
 
-> **🚀 Early Access Available** - Experience the future of digital journaling with our Phase 1 MVP, now ready for early adopters!
+> **🚀 Early Access Available** - Experience secure, multi-device journaling with our hybrid architecture, now ready for early adopters!
 
 ## 🌟 Features
 
 ### Phase 1 (Current MVP) - ✅ COMPLETE
 - ✅ **Zero-knowledge journaling** with AES-256 client-side encryption
+- ✅ **Cross-device sync** with secure server-side storage
 - ✅ **Offline-first PWA** with beautiful markdown editor and dark/light themes
+- ✅ **Hybrid architecture** combining local IndexedDB with encrypted cloud sync
 
 ### Planned Features
 - 📅 **Calendar & Search**: Visual timeline with full-text search and tagging
@@ -21,6 +23,7 @@ A minimalist, secure personal journal application with offline capabilities, bui
 ### Prerequisites
 - Node.js 24.6.0+ 
 - npm 11.5.1+
+- SQLite (for backend development)
 
 ### Installation
 
@@ -29,49 +32,86 @@ A minimalist, secure personal journal application with offline capabilities, bui
 git clone https://github.com/brennanbrown/journalfor.me.git
 cd journalfor.me
 
-# Install dependencies
+# Install frontend dependencies
 npm install
 
-# Start development server
+# Install backend dependencies
+cd server
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your configuration
+
+# Run database migration
+npm run migrate
+
+# Start backend server (in server directory)
+npm run dev
+
+# Start frontend (in root directory)
+cd ..
 npm run dev
 
 # Open http://localhost:5173 in your browser
 ```
-
+cs
 ### Available Scripts
 
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run preview      # Preview production build
+# Frontend Commands
+npm run dev          # Start frontend development server
+npm run build        # Build frontend for production
+npm run preview      # Preview frontend production build
 npm run type-check   # Run TypeScript type checking
 npm run test         # Run automated test suite
+
+# Backend Commands (in server/ directory)
+npm run dev          # Start backend API server
+npm run build        # Build backend for production
+npm run migrate      # Run database migrations
+npm test             # Run backend tests
 ```
 
 ## 🌐 Deployment
 
-### Netlify (Recommended)
+### Hybrid Architecture Deployment
 
-This app is optimized for Netlify deployment with the included `netlify.toml` configuration:
+The app now requires both frontend and backend deployment:
 
-1. **Connect Repository**: Link your GitHub repo to Netlify
-2. **Auto-Deploy**: Netlify will automatically detect the build settings
-3. **Custom Domain**: Configure your domain in Netlify dashboard
-
-**Build Settings:**
-- Build command: `npm run build`
-- Publish directory: `dist`
-- Node version: 18+
-
-### Manual Deployment
-
+#### Frontend (Static Site)
+**Recommended: Netlify/Vercel**
 ```bash
-# Build for production
+# Build frontend
 npm run build
-
-# The dist/ folder contains your deployable static files
-# Upload the contents to any static hosting service
+# Deploy dist/ folder to static hosting
 ```
+
+#### Backend (API Server)
+**Recommended: Railway/Render/Fly.io**
+```bash
+# From server/ directory
+npm run build
+# Deploy with environment variables:
+# - JWT_SECRET
+# - DATABASE_URL (PostgreSQL for production)
+# - ALLOWED_ORIGINS
+```
+
+#### Environment Variables
+```bash
+# Backend (.env)
+JWT_SECRET=your-secure-jwt-secret
+JWT_EXPIRES_IN=7d
+PORT=3001
+ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+DATABASE_URL=postgresql://user:pass@host:port/db
+```
+
+#### Production Database
+- **Development**: SQLite (included)
+- **Production**: PostgreSQL (recommended)
+- **Managed Options**: Supabase, PlanetScale, Neon
 
 ## 🏗️ Project Structure
 
@@ -79,7 +119,7 @@ npm run build
 journalfor.me/
 ├── public/                 # Static assets
 │   └── favicon.svg        # App icon
-├── src/
+├── src/                   # Frontend source
 │   ├── components/        # UI components
 │   │   ├── App.ts        # Main application shell
 │   │   ├── Auth.ts       # Authentication forms
@@ -89,21 +129,22 @@ journalfor.me/
 │   │   ├── Search.ts     # Search interface
 │   │   ├── Settings.ts   # User preferences
 │   │   └── EntryView.ts  # Single entry display
-│   ├── styles/
-│   │   └── main.css      # Global styles with Tailwind
 │   ├── utils/            # Utility functions
-│   │   ├── app.ts        # App initialization
-│   │   ├── theme.ts      # Theme management
-│   │   ├── storage.ts    # IndexedDB wrapper
+│   │   ├── storage.ts    # Hybrid storage manager
+│   │   ├── api.ts        # Server API client
 │   │   └── router.ts     # Client-side routing
-│   ├── types/            # TypeScript type definitions
-│   │   └── index.ts      # Core types
-│   └── main.ts           # Application entry point
-├── index.html            # HTML template
-├── vite.config.ts        # Vite configuration
-├── tailwind.config.js    # Tailwind CSS configuration
-├── tsconfig.json         # TypeScript configuration
-└── package.json          # Project dependencies
+│   └── types/            # TypeScript definitions
+├── server/                # Backend API
+│   ├── src/
+│   │   ├── controllers/   # API route handlers
+│   │   ├── middleware/    # Auth & validation
+│   │   ├── database/      # Database connection
+│   │   ├── types/         # Backend types
+│   │   └── index.ts       # Express server
+│   ├── package.json       # Backend dependencies
+│   └── .env.example       # Environment template
+├── vite.config.ts         # Frontend build config
+└── package.json           # Frontend dependencies
 ```
 
 ## 🎨 Design System
@@ -126,7 +167,11 @@ journalfor.me/
 
 ## 🔒 Security & Privacy
 
-- **Zero-knowledge architecture** with AES-256 client-side encryption—your entries never leave your device unencrypted
+- **Zero-knowledge architecture**: Server stores only encrypted blobs, never plaintext
+- **Client-side encryption**: AES-256 with PBKDF2 key derivation
+- **Secure authentication**: JWT tokens with bcrypt password hashing
+- **HTTPS required**: All data transmission encrypted in transit
+- **No data mining**: Your journal entries remain completely private
 
 ## ♿ Accessibility
 
@@ -144,10 +189,18 @@ journalfor.me/
 - **Tailwind CSS**: Utility-first CSS framework
 - **Font Awesome**: Icon library for consistent iconography
 
-### Storage & PWA
-- **IndexedDB**: Client-side database for data persistence
+### Storage & Sync
+- **Hybrid Storage**: IndexedDB + encrypted server sync
+- **Zero-Knowledge**: Client-side AES-256 encryption
+- **SQLite/PostgreSQL**: Server-side encrypted data storage
 - **Service Workers**: Offline functionality and caching
 - **Web App Manifest**: PWA configuration
+
+### Backend
+- **Node.js + Express**: RESTful API server
+- **JWT Authentication**: Secure token-based auth
+- **bcrypt**: Password hashing and validation
+- **SQLite/PostgreSQL**: Database with better-sqlite3/pg
 
 ### Development Tools
 - **ESLint**: Code linting and style enforcement
@@ -159,7 +212,10 @@ journalfor.me/
 **Journal for Me** is now available in **Early Access**! Phase 1 MVP is complete and ready for users who want to experience the future of digital journaling.
 
 ### ✅ What's Ready Now
-- **Production-ready MVP** with secure authentication, encrypted storage, markdown editor, and 97% test coverage
+- **Cross-device sync** with zero-knowledge encryption
+- **Hybrid architecture** combining offline-first with cloud backup
+- **Production-ready MVP** with 97% test coverage
+- **Secure authentication** and encrypted storage
 
 ### 🎯 Perfect For Early Adopters Who Want
 - **Privacy-first journaling** with beautiful UX and zero data tracking
