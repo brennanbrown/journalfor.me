@@ -1,6 +1,6 @@
-import { neon } from '@netlify/neon';
-import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
+const { neon } = require('@netlify/neon');
+const jwt = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid');
 
 const sql = neon(process.env.NETLIFY_DATABASE_URL);
 
@@ -14,7 +14,7 @@ function verifyToken(authHeader) {
   return jwt.verify(token, process.env.JWT_SECRET);
 }
 
-export async function handler(event, context) {
+exports.handler = async (event, context) => {
   // Handle CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',

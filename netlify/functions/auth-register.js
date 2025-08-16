@@ -1,11 +1,11 @@
-import { neon } from '@netlify/neon';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
+const { neon } = require('@netlify/neon');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid');
 
 const sql = neon(process.env.NETLIFY_DATABASE_URL);
 
-export async function handler(event, context) {
+exports.handler = async (event, context) => {
   // Handle CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
