@@ -48,17 +48,35 @@ class ApiClient {
       ...options,
     };
 
+    console.log(`🔍 API Request: ${options.method || 'GET'} ${url}`);
+    console.log(`🔍 Request config:`, config);
+
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
+      console.log(`🔍 Response status: ${response.status}`);
+      console.log(`🔍 Response headers:`, Object.fromEntries(response.headers.entries()));
+      
+      const responseText = await response.text();
+      console.log(`🔍 Raw response body: ${responseText}`);
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        console.log(`🔍 Parsed response data:`, data);
+      } catch (parseError) {
+        console.error(`🔍 JSON parse error:`, parseError);
+        console.error(`🔍 Response text that failed to parse: "${responseText}"`);
+        throw new Error(`Invalid JSON response: ${responseText}`);
+      }
       
       if (!response.ok) {
+        console.error(`🔍 HTTP error ${response.status}:`, data);
         throw new Error(data.error || `HTTP ${response.status}`);
       }
       
       return data;
     } catch (error) {
-      console.error(`API request failed: ${endpoint}`, error);
+      console.error(`🔍 API request failed: ${endpoint}`, error);
       throw error;
     }
   }
@@ -156,8 +174,16 @@ class ApiClient {
 
   async healthCheck(): Promise<boolean> {
     try {
+      console.log(`🔍 Health check URL: ${this.baseUrl}/health`);
       const response = await fetch(`${this.baseUrl}/health`);
-      const data = await response.json();
+      console.log(`🔍 Health check response status: ${response.status}`);
+      
+      const responseText = await response.text();
+      console.log(`🔍 Health check raw response: ${responseText}`);
+      
+      const data = JSON.parse(responseText);
+      console.log(`🔍 Health check parsed data:`, data);
+      
       return data.success;
     } catch (error) {
       console.warn('Server health check failed:', error);

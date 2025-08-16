@@ -1,9 +1,9 @@
 import './styles/main.css'
 import { initializeApp } from './utils/app'
+import './utils/api-debug-test'
 
-// Initialize the application
-document.addEventListener('DOMContentLoaded', () => {
-  initializeApp()
+document.addEventListener('DOMContentLoaded', async () => {
+  await initializeApp()
 })
 
 // Service Worker Registration
