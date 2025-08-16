@@ -82,7 +82,18 @@ export async function initializeApp(): Promise<void> {
         }, 100)
       } else {
         console.log('🚀 No session found, initializing without user data...')
-        await appStore.initialize()
+        // Add timeout to prevent hanging
+        try {
+          await Promise.race([
+            appStore.initialize(),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Initialization timeout')), 5000)
+            )
+          ])
+        } catch (error) {
+          console.warn('AppStore initialization failed or timed out:', error)
+          // Continue anyway to prevent hanging
+        }
       }
       
       console.log('🎉 Journal app initialized successfully!')
