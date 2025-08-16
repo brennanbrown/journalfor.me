@@ -1,11 +1,19 @@
-# Deployment Guide 🚀
+# Deployment Guide
+
+This guide covers deploying the journalfor.me application to production using Netlify DB (Neon) and Netlify Functions.
+
+## Prerequisites
+
+- Node.js 18+ installed
+- Netlify account with Netlify DB access
+- Domain name (optional)
 
 ## Architecture Overview
 
-Your journalfor.me app uses a **hybrid architecture** requiring two separate deployments:
-
-1. **Frontend**: Static React/TypeScript app (Vite build)
-2. **Backend**: Node.js/Express API server with database
+The application now uses a serverless architecture:
+- **Frontend**: Static site hosted on Netlify
+- **Backend**: Netlify Functions (serverless)
+- **Database**: Netlify DB (powered by Neon PostgreSQL)
 
 ## Recommended Deployment Strategy
 

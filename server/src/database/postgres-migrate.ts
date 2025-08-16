@@ -1,11 +1,9 @@
-import pool from './postgres-connection';
+import sql from './postgres-connection';
 
 export async function createTables() {
-  const client = await pool.connect();
-  
   try {
     // Create users table
-    await client.query(`
+    await sql`
       CREATE TABLE IF NOT EXISTS users (
         id UUID PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
@@ -14,10 +12,10 @@ export async function createTables() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
-    `);
+    `;
 
     // Create entries table
-    await client.query(`
+    await sql`
       CREATE TABLE IF NOT EXISTS entries (
         id UUID PRIMARY KEY,
         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -25,32 +23,32 @@ export async function createTables() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
-    `);
+    `;
 
     // Create indexes
-    await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_entries_user_id ON entries(user_id);
-    `);
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_entries_user_id ON entries(user_id)
+    `;
     
-    await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_entries_created_at ON entries(created_at);
-    `);
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_entries_created_at ON entries(created_at)
+    `;
 
-    console.log('PostgreSQL tables created successfully');
-  } finally {
-    client.release();
+    console.log('Neon database tables created successfully');
+  } catch (error) {
+    console.error('Error creating tables:', error);
+    throw error;
   }
 }
 
 export async function dropTables() {
-  const client = await pool.connect();
-  
   try {
-    await client.query('DROP TABLE IF EXISTS entries');
-    await client.query('DROP TABLE IF EXISTS users');
-    console.log('PostgreSQL tables dropped successfully');
-  } finally {
-    client.release();
+    await sql`DROP TABLE IF EXISTS entries`;
+    await sql`DROP TABLE IF EXISTS users`;
+    console.log('Neon database tables dropped successfully');
+  } catch (error) {
+    console.error('Error dropping tables:', error);
+    throw error;
   }
 }
 

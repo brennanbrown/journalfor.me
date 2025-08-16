@@ -61,8 +61,8 @@ jobs:
     
     - name: Setup test database
       run: |
-        # Skip PostgreSQL migration in CI - use in-memory testing
-        echo "Skipping PostgreSQL migration for CI tests"
+        # Skip database setup in CI - using Netlify Functions now
+        echo "Skipping database setup for serverless architecture"
     
     
     - name: Run backend tests
