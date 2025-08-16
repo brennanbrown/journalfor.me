@@ -597,7 +597,10 @@ export class StorageManager {
         console.log(`☁️ User logged in from server: ${authResponse.user.email}`)
         
         // Decrypt and save user data locally
-        const serverUser = JSON.parse(this.decrypt(authResponse.user.encryptedData)) as User
+        console.log('🔍 Server response encryptedData:', authResponse.user.encryptedData)
+        const decryptedData = this.decrypt(authResponse.user.encryptedData)
+        console.log('🔍 Decrypted data:', decryptedData)
+        const serverUser = JSON.parse(decryptedData) as User
         await this.saveUser(serverUser)
         
         // Sync entries from server
