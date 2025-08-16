@@ -12,6 +12,7 @@ export class AppStore {
   private themeManager: ThemeManager
   private state: AppState
   private listeners: Set<(state: AppState) => void> = new Set()
+  private isInitializing: boolean = false
   
   constructor() {
     this.storage = new StorageManager()
@@ -37,6 +38,13 @@ export class AppStore {
    * Initialize the application
    */
   async initialize(masterPassword?: string): Promise<void> {
+    // Prevent recursive initialization
+    if (this.isInitializing) {
+      console.log('🔄 AppStore initialization already in progress, skipping...')
+      return
+    }
+    
+    this.isInitializing = true
     this.updateState({ isLoading: true })
     
     try {
@@ -71,6 +79,8 @@ export class AppStore {
       console.error('Failed to initialize app:', error)
       this.updateState({ isLoading: false })
       throw error
+    } finally {
+      this.isInitializing = false
     }
   }
   

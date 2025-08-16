@@ -26,8 +26,8 @@ class ApiClient {
   private token: string | null = null;
 
   constructor() {
-    // Use environment variable or default to localhost for development
-    this.baseUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3001';
+    // Use environment variable or default to production backend
+    this.baseUrl = (import.meta as any).env?.VITE_API_URL || 'https://journalforme-production.up.railway.app';
     
     // Load token from localStorage if available
     this.token = localStorage.getItem('auth_token');

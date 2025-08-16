@@ -265,26 +265,20 @@ export class Router {
    * Check if user is authenticated
    */
   private isAuthenticated(): boolean {
-          // Check if app store has a user
-      try {
-        // Import dynamically to avoid circular dependencies
-        const appStore = (window as any).appStore
-        if (appStore) {
-          const state = appStore.getState()
-          console.log('🔐 Auth check - user state:', state.user ? `${state.user.email}` : 'null')
-          console.log('🔐 Auth check - full state:', { 
-            hasUser: !!state.user, 
-            entriesCount: state.entries.length,
-            isLoading: state.isLoading 
-          })
-          return state.user !== null
-        }
-        console.log('🔐 Auth check - no app store found')
-        return false
-      } catch (error) {
-        console.log('🔐 Auth check - error:', error)
-        return false
+    try {
+      // Check for session data in localStorage to avoid circular dependency
+      const sessionData = localStorage.getItem('journal_session')
+      if (sessionData) {
+        const session = JSON.parse(sessionData)
+        console.log('🔐 Auth check - session found:', session.email || 'unknown')
+        return true
       }
+      console.log('🔐 Auth check - no session found')
+      return false
+    } catch (error) {
+      console.log('🔐 Auth check - error:', error)
+      return false
+    }
   }
   
   /**
