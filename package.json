@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "test": "node test-runner.cjs",
+    "test:production": "node test-production.cjs",
+    "pre-deploy": "npm run build && npm run test:production",
     "test:dev": "npm run dev & sleep 3 && npm run test && pkill -f vite",
     "test:ci": "npm run build && npm run preview & sleep 3 && npm run test && pkill -f vite"
   },
