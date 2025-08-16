@@ -31,7 +31,8 @@ app.use(limiter);
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
   'http://localhost:5173',
   'http://localhost:5174',
-  'https://journalfor.me'
+  'https://journalfor.me',
+  'https://journalforme.netlify.app'
 ];
 
 app.use(cors({
