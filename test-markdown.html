@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Formatting Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">Markdown Formatting Test</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Original Markdown -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">Original Markdown</h2>
+                <pre id="markdown-source" class="text-sm bg-gray-100 p-4 rounded overflow-auto"></pre>
+            </div>
+            
+            <!-- Rendered HTML -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">Rendered HTML</h2>
+                <div id="rendered-content" class="prose max-w-none"></div>
+            </div>
+        </div>
+        
+        <div class="mt-8">
+            <button id="test-button" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                Test Markdown Rendering
+            </button>
+            <div id="test-results" class="mt-4"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the markdown utility
+        import { convertMarkdownToHTML } from './src/utils/markdown.js';
+        
+        const comprehensiveMarkdown = `# Main Header
+
+This is a paragraph with **bold text** and *italic text* and ***bold italic text***.
+
+## Secondary Header
+
+Here's a list:
+- First item
+- Second item with **bold**
+- Third item with *italic*
+
+### Tertiary Header
+
+1. Numbered list item
+2. Another numbered item
+3. Final numbered item
+
+#### Fourth Level Header
+
+A paragraph with a [link](https://example.com) and some \`inline code\`.
+
+##### Fifth Level Header
+
+> This is a blockquote
+> with multiple lines
+> and **bold text** inside
+
+###### Sixth Level Header
+
+Final paragraph with all formatting: **bold**, *italic*, ***both***, \`code\`, and [links](https://test.com).
+
+Another paragraph to test spacing between elements.
+
+---
+
+Text after horizontal rule.`;
+
+        function runMarkdownTest() {
+            // Display original markdown
+            document.getElementById('markdown-source').textContent = comprehensiveMarkdown;
+            
+            // Convert and display HTML
+            const html = convertMarkdownToHTML(comprehensiveMarkdown);
+            document.getElementById('rendered-content').innerHTML = html;
+            
+            // Run tests
+            const results = [];
+            
+            // Test 1: Headers
+            const h1 = document.querySelector('#rendered-content h1');
+            const h2 = document.querySelector('#rendered-content h2');
+            const h3 = document.querySelector('#rendered-content h3');
+            
+            if (h1 && h1.textContent.includes('Main Header')) {
+                results.push('✅ H1 header rendered correctly');
+            } else {
+                results.push('❌ H1 header not rendered');
+            }
+            
+            if (h2 && h2.textContent.includes('Secondary Header')) {
+                results.push('✅ H2 header rendered correctly');
+            } else {
+                results.push('❌ H2 header not rendered');
+            }
+            
+            // Test 2: Bold and Italic
+            const bold = document.querySelector('#rendered-content strong');
+            const italic = document.querySelector('#rendered-content em');
+            
+            if (bold) {
+                results.push('✅ Bold text rendered correctly');
+            } else {
+                results.push('❌ Bold text not rendered');
+            }
+            
+            if (italic) {
+                results.push('✅ Italic text rendered correctly');
+            } else {
+                results.push('❌ Italic text not rendered');
+            }
+            
+            // Test 3: Lists
+            const ul = document.querySelector('#rendered-content ul');
+            const ol = document.querySelector('#rendered-content ol');
+            
+            if (ul && ul.querySelectorAll('li').length >= 3) {
+                results.push('✅ Unordered list rendered correctly');
+            } else {
+                results.push('❌ Unordered list not rendered properly');
+            }
+            
+            if (ol && ol.querySelectorAll('li').length >= 3) {
+                results.push('✅ Ordered list rendered correctly');
+            } else {
+                results.push('❌ Ordered list not rendered properly');
+            }
+            
+            // Test 4: Links and Code
+            const link = document.querySelector('#rendered-content a');
+            const code = document.querySelector('#rendered-content code');
+            
+            if (link && link.href) {
+                results.push('✅ Links rendered correctly');
+            } else {
+                results.push('❌ Links not rendered');
+            }
+            
+            if (code) {
+                results.push('✅ Inline code rendered correctly');
+            } else {
+                results.push('❌ Inline code not rendered');
+            }
+            
+            // Test 5: Blockquotes
+            const blockquote = document.querySelector('#rendered-content blockquote');
+            if (blockquote) {
+                results.push('✅ Blockquote rendered correctly');
+            } else {
+                results.push('❌ Blockquote not rendered');
+            }
+            
+            // Test 6: Paragraphs and Spacing
+            const paragraphs = document.querySelectorAll('#rendered-content p');
+            if (paragraphs.length >= 2) {
+                results.push('✅ Multiple paragraphs rendered correctly');
+                
+                // Check spacing
+                const firstP = paragraphs[0];
+                const style = window.getComputedStyle(firstP);
+                if (parseFloat(style.marginBottom) > 0) {
+                    results.push('✅ Paragraph spacing applied correctly');
+                } else {
+                    results.push('❌ No spacing between paragraphs');
+                }
+            } else {
+                results.push('❌ Paragraphs not rendered properly');
+            }
+            
+            // Display results
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = `
+                <h3 class="text-lg font-semibold mb-2">Test Results:</h3>
+                <div class="space-y-1">
+                    ${results.map(result => `<div class="text-sm">${result}</div>`).join('')}
+                </div>
+            `;
+        }
+        
+        document.getElementById('test-button').addEventListener('click', runMarkdownTest);
+        
+        // Auto-run test on load
+        window.addEventListener('load', runMarkdownTest);
+    </script>
+</body>
+</html>
