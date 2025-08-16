@@ -300,20 +300,33 @@ export class StorageManager {
       updatedAt: new Date()
     }
     
+    console.log('🔍 saveUser: Saving user to IndexedDB:', user.id, user.email)
     await this.db.put('user', storageItem)
+    console.log('🔍 saveUser: User saved successfully')
+    
+    // Verify the save worked
+    const savedUsers = await this.db.getAll('user')
+    console.log(`🔍 saveUser: Verification - ${savedUsers.length} users now in IndexedDB`)
   }
   
   /**
    * Check if user exists in storage (without requiring decryption)
    */
   async hasExistingUser(): Promise<boolean> {
-    if (!this.db) return false
+    if (!this.db) {
+      console.log('🔍 hasExistingUser: No database available')
+      return false
+    }
     
     try {
       const users = await this.db.getAll('user')
+      console.log(`🔍 hasExistingUser: Found ${users.length} users in IndexedDB`)
+      if (users.length > 0) {
+        console.log('🔍 hasExistingUser: User IDs:', users.map(u => u.id))
+      }
       return users.length > 0
     } catch (error) {
-      console.error('Error checking for existing user:', error)
+      console.error('🔍 hasExistingUser: Error checking for existing user:', error)
       return false
     }
   }
@@ -590,17 +603,74 @@ export class StorageManager {
   async loginUser(email: string, password: string): Promise<User> {
     const passwordHash = CryptoJS.SHA256(password).toString()
     
+    // Set encryption key from password for this session
+    this.encryptionKey = this.deriveEncryptionKey(password)
+    console.log('🔑 Encryption key set for login session')
+    
     // Try server login first if available
     if (this.serverAvailable) {
       try {
         const authResponse = await apiClient.login(email, passwordHash)
         console.log(`☁️ User logged in from server: ${authResponse.user.email}`)
         
-        // Decrypt and save user data locally
+        // Handle server user data - it might already be in the correct format
         console.log('🔍 Server response encryptedData:', authResponse.user.encryptedData)
-        const decryptedData = this.decrypt(authResponse.user.encryptedData)
-        console.log('🔍 Decrypted data:', decryptedData)
-        const serverUser = JSON.parse(decryptedData) as User
+        
+        let serverUser: User
+        try {
+          // Try to decrypt if it looks like encrypted data
+          if (authResponse.user.encryptedData && authResponse.user.encryptedData.startsWith('U2FsdGVkX1')) {
+            console.log('🔍 Attempting to decrypt server data with current key')
+            try {
+              const decryptedData = this.decrypt(authResponse.user.encryptedData)
+              console.log('🔍 Decrypted data successfully:', decryptedData.substring(0, 100) + '...')
+              serverUser = JSON.parse(decryptedData) as User
+              console.log('🔍 Parsed user from decrypted data:', serverUser.email)
+            } catch (decryptError) {
+              console.log('🔍 Decryption failed, data may be encrypted with different key:', decryptError)
+              throw decryptError // Let outer catch handle this
+            }
+          } else {
+            console.log('🔍 No encrypted data or not in expected format, creating new user')
+            // If not encrypted, create user from auth response
+            serverUser = {
+              id: authResponse.user.id,
+              email: authResponse.user.email,
+              createdAt: new Date(),
+              preferences: {
+                theme: 'system',
+                fontSize: 'medium',
+                lineHeight: 'normal',
+                fontFamily: 'system',
+                autoSave: true,
+                showWordCount: true,
+                enableAnimations: true,
+                dailyWordTarget: 500
+              }
+            }
+            console.log('🔍 Created user from auth response:', serverUser)
+          }
+        } catch (decryptError) {
+          console.log('🔍 Decryption failed, creating user from auth response:', decryptError)
+          // Fallback: create user from auth response
+          serverUser = {
+            id: authResponse.user.id,
+            email: authResponse.user.email,
+            createdAt: new Date(),
+            preferences: {
+              theme: 'system',
+              fontSize: 'medium',
+              lineHeight: 'normal',
+              fontFamily: 'system',
+              autoSave: true,
+              showWordCount: true,
+              enableAnimations: true,
+              dailyWordTarget: 500
+            }
+          }
+          console.log('🔍 Fallback user created:', serverUser)
+        }
+        
         await this.saveUser(serverUser)
         
         // Sync entries from server

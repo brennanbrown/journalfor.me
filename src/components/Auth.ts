@@ -299,8 +299,8 @@ function setupLoginForm(): void {
       // Also try direct navigation as a fallback
       setTimeout(() => {
         if (window.location.pathname === '/login') {
-          console.log('🔄 Fallback: manually changing location')
-          window.location.href = '/'
+          console.log('🔄 Fallback: navigating to dashboard')
+          window.dispatchEvent(new CustomEvent('navigate', { detail: { path: '/' } }))
         }
       }, 100)
     } catch (error) {
@@ -422,8 +422,8 @@ function setupRegisterForm(): void {
       // Also try direct navigation as a fallback
       setTimeout(() => {
         if (window.location.pathname === '/register') {
-          console.log('🔄 Fallback: manually changing location')
-          window.location.href = '/'
+          console.log('🔄 Fallback: navigating to dashboard')
+          window.dispatchEvent(new CustomEvent('navigate', { detail: { path: '/' } }))
         }
       }, 100)
     } catch (error) {

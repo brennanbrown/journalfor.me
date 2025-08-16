@@ -540,9 +540,9 @@ async function deleteAllData(): Promise<void> {
     
     showNotification('All data deleted successfully!')
     
-    // Redirect to login/welcome page after a short delay
+    // Navigate to login/welcome page after a short delay
     setTimeout(() => {
-      window.location.href = '/'
+      window.dispatchEvent(new CustomEvent('navigate', { detail: { path: '/' } }))
     }, 2000)
   } catch (error) {
     console.error('Delete failed:', error)

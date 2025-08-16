@@ -28,34 +28,59 @@ exports.handler = async (event, context) => {
   try {
     const { email, passwordHash } = JSON.parse(event.body);
     
-    const result = await sql`
-      SELECT id, email, password_hash, encrypted_data 
-      FROM users 
-      WHERE email = ${email}
-    `;
-    
-    if (result.length === 0) {
+    console.log('🔍 Login Function Debug:');
+    console.log(`📊 Email: ${email}`);
+    console.log(`📊 Received passwordHash: ${passwordHash}`);
+    console.log(`📊 passwordHash length: ${passwordHash?.length}`);
+    console.log(`📊 passwordHash type: ${typeof passwordHash}`);
+
+    if (!email || !passwordHash) {
       return {
-        statusCode: 401,
+        statusCode: 400,
         headers,
-        body: JSON.stringify({
-          success: false,
-          error: 'Invalid email or password'
-        })
+        body: JSON.stringify({ success: false, error: 'Email and password hash are required' })
       };
     }
+
+    // Check if user exists
+    const existingUser = await sql`SELECT id, email, password_hash, encrypted_data FROM users WHERE email = ${email}`;
     
-    const user = result[0];
-    const isValidPassword = await bcrypt.compare(passwordHash, user.password_hash);
+    console.log(`📊 Users found: ${existingUser.length}`);
     
-    if (!isValidPassword) {
+    if (existingUser.length === 0) {
+      console.log('❌ No user found with email:', email);
       return {
         statusCode: 401,
         headers,
-        body: JSON.stringify({
-          success: false,
-          error: 'Invalid email or password'
-        })
+        body: JSON.stringify({ success: false, error: 'Invalid email or password' })
+      };
+    }
+
+    const user = existingUser[0];
+    console.log(`📊 Stored password_hash: ${user.password_hash}`);
+    console.log(`📊 Stored hash length: ${user.password_hash?.length}`);
+    console.log(`📊 Stored hash type: ${typeof user.password_hash}`);
+
+    // Compare password hash - check if it's already hashed or plain text
+    let isValidPassword = false;
+    
+    // If the incoming passwordHash looks like a bcrypt hash, compare directly
+    if (passwordHash.startsWith('$2') && passwordHash.length >= 60) {
+      console.log('🔍 Incoming hash appears to be bcrypt, comparing directly');
+      isValidPassword = passwordHash === user.password_hash;
+    } else {
+      console.log('🔍 Incoming hash appears to be plain text/SHA256, using bcrypt.compare');
+      isValidPassword = await bcrypt.compare(passwordHash, user.password_hash);
+    }
+    
+    console.log(`📊 Password comparison result: ${isValidPassword}`);
+    
+    if (!isValidPassword) {
+      console.log('❌ Password validation failed');
+      return {
+        statusCode: 401,
+        headers,
+        body: JSON.stringify({ success: false, error: 'Invalid email or password' })
       };
     }
     

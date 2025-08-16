@@ -26,18 +26,26 @@ class ApiClient {
   private token: string | null = null;
 
   constructor() {
-    // Emergency fix: hardcode production backend URL
-    this.baseUrl = 'https://journalforme-production.up.railway.app';
+    // Use environment variable for API URL, fallback to Netlify Functions
+    this.baseUrl = (import.meta as any).env?.VITE_API_URL || '/.netlify/functions';
+    
+    // Debug environment variables
+    console.log('🔍 API Client Environment Debug:');
+    console.log(`📊 import.meta.env:`, (import.meta as any).env);
+    console.log(`📊 VITE_API_URL from env:`, (import.meta as any).env?.VITE_API_URL);
+    console.log(`📊 Final baseUrl:`, this.baseUrl);
     
     // Load token from localStorage if available
     this.token = localStorage.getItem('auth_token');
+    console.log(`📊 Auth token loaded:`, this.token ? 'Yes' : 'No');
   }
 
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    const url = `${this.baseUrl}/api${endpoint}`;
+    // For Netlify Functions, don't add /api prefix
+    const url = this.baseUrl.includes('netlify') ? `${this.baseUrl}${endpoint}` : `${this.baseUrl}/api${endpoint}`;
     
     const config: RequestInit = {
       headers: {
@@ -92,7 +100,7 @@ class ApiClient {
   }
 
   async register(email: string, passwordHash: string, encryptedUserData: string): Promise<AuthResponse> {
-    const response = await this.request<AuthResponse>('/auth/register', {
+    const response = await this.request<AuthResponse>('/auth-register', {
       method: 'POST',
       body: JSON.stringify({
         email,
@@ -110,7 +118,13 @@ class ApiClient {
   }
 
   async login(email: string, passwordHash: string): Promise<AuthResponse> {
-    const response = await this.request<AuthResponse>('/auth/login', {
+    console.log('🔍 Login Debug:');
+    console.log(`📊 Email: ${email}`);
+    console.log(`📊 Password Hash: ${passwordHash}`);
+    console.log(`📊 Hash Length: ${passwordHash.length}`);
+    console.log(`📊 Hash Type: ${typeof passwordHash}`);
+    
+    const response = await this.request<AuthResponse>('/auth-login', {
       method: 'POST',
       body: JSON.stringify({
         email,
@@ -174,17 +188,14 @@ class ApiClient {
 
   async healthCheck(): Promise<boolean> {
     try {
-      console.log(`🔍 Health check URL: ${this.baseUrl}/health`);
-      const response = await fetch(`${this.baseUrl}/health`);
+      // For Netlify Functions, just check if we can reach the functions endpoint
+      const healthUrl = this.baseUrl.includes('netlify') ? `${this.baseUrl}/auth-login` : `${this.baseUrl}/health`;
+      console.log(`🔍 Health check URL: ${healthUrl}`);
+      const response = await fetch(healthUrl, { method: 'OPTIONS' });
       console.log(`🔍 Health check response status: ${response.status}`);
       
-      const responseText = await response.text();
-      console.log(`🔍 Health check raw response: ${responseText}`);
-      
-      const data = JSON.parse(responseText);
-      console.log(`🔍 Health check parsed data:`, data);
-      
-      return data.success;
+      // For Netlify Functions, a 200 response to OPTIONS means the function exists
+      return response.status === 200;
     } catch (error) {
       console.warn('Server health check failed:', error);
       return false;

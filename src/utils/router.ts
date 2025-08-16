@@ -127,14 +127,35 @@ export class Router {
   private setupDefaultRoutes(): void {
     // Home - Landing page for non-authenticated users, Dashboard for authenticated users
     this.addRoute('/', async () => {
-      if (this.isAuthenticated()) {
-        const { renderDashboard } = await import('../components/Dashboard')
-        await renderDashboard()
-        document.title = 'Dashboard - Journal for Me'
-      } else {
-        const { renderLandingPage } = await import('../components/LandingPage')
-        renderLandingPage()
-        document.title = 'Journal for Me - Your thoughts, beautifully organized'
+      try {
+        if (this.isAuthenticated()) {
+          console.log('🧭 Loading Dashboard for authenticated user')
+          const { renderDashboard } = await import('../components/Dashboard')
+          await renderDashboard()
+          document.title = 'Dashboard - Journal for Me'
+        } else {
+          console.log('🧭 Loading LandingPage for non-authenticated user')
+          const { renderLandingPage } = await import('../components/LandingPage')
+          renderLandingPage()
+          document.title = 'Journal for Me - Your thoughts, beautifully organized'
+        }
+      } catch (error) {
+        console.error('🧭 Navigation error:', error)
+        // Fallback: show a basic page instead of crashing
+        const mainContent = document.getElementById('main-content')
+        if (mainContent) {
+          mainContent.innerHTML = `
+            <div class="min-h-screen flex items-center justify-center">
+              <div class="text-center">
+                <h1 class="text-2xl font-bold mb-4">Loading...</h1>
+                <p>Please wait while we load your content.</p>
+                <button onclick="window.location.reload()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded">
+                  Refresh Page
+                </button>
+              </div>
+            </div>
+          `
+        }
       }
     }, { title: 'Home' })
     
@@ -266,11 +287,12 @@ export class Router {
    */
   private isAuthenticated(): boolean {
     try {
-      // Check for session data in localStorage to avoid circular dependency
-      const sessionData = localStorage.getItem('journal_session')
-      if (sessionData) {
-        const session = JSON.parse(sessionData)
-        console.log('🔐 Auth check - session found:', session.email || 'unknown')
+      // Check for session data using the correct keys
+      const sessionPassword = sessionStorage.getItem('journal-session-key')
+      const userEmail = localStorage.getItem('journal-user-email')
+      
+      if (sessionPassword && userEmail) {
+        console.log('🔐 Auth check - session found:', userEmail)
         return true
       }
       console.log('🔐 Auth check - no session found')

@@ -41,21 +41,13 @@ export async function initializeApp(): Promise<void> {
       if (sessionPassword && userEmail) {
         console.log('🔐 Found session data, attempting to restore user session...')
         
-        // First check if user exists in storage
-        const hasUser = await appStore.storage.hasExistingUser()
-        if (!hasUser) {
-          console.log('🔐 No user data found in storage, clearing session')
-          sessionStorage.removeItem('journal-session-key')
-          localStorage.removeItem('journal-user-email')
-          await appStore.initialize()
-          router.start()
-          return
-        }
+        // Skip local storage validation - directly try to restore session
+        console.log('🔐 Attempting direct session restoration with stored credentials')
         
         // Try to initialize with session password directly
         try {
+          // Initialize app store with the session password
           await appStore.initialize(sessionPassword)
-          console.log('🎉 Session restored successfully!')
           
           // Verify the user is actually logged in
           const state = appStore.getState()

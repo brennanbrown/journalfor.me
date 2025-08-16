@@ -225,7 +225,7 @@ export function renderLandingPage(): void {
 function setupLandingPageEventListeners(): void {
   // Get started button
   document.getElementById('get-started-btn')?.addEventListener('click', () => {
-    window.location.href = '/register'
+    window.dispatchEvent(new CustomEvent('navigate', { detail: { path: '/register' } }))
   })
 
   // Learn more button - scroll to features
@@ -253,6 +253,6 @@ function setupLandingPageEventListeners(): void {
 
   // CTA signup button
   document.getElementById('cta-signup-btn')?.addEventListener('click', () => {
-    window.location.href = '/register'
+    window.dispatchEvent(new CustomEvent('navigate', { detail: { path: '/register' } }))
   })
 }

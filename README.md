@@ -20,10 +20,12 @@ A minimalist, secure personal journal application with **cross-device sync** and
 
 ## 🚀 Quick Start
 
+### Live Demo
+**Try it now**: [https://journalforme.netlify.app](https://journalforme.netlify.app)
+
 ### Prerequisites
-- Node.js 24.6.0+ 
-- npm 11.5.1+
-- SQLite (for backend development)
+- Node.js 18+ 
+- npm 9+
 
 ### Installation
 
@@ -32,25 +34,10 @@ A minimalist, secure personal journal application with **cross-device sync** and
 git clone https://github.com/brennanbrown/journalfor.me.git
 cd journalfor.me
 
-# Install frontend dependencies
+# Install dependencies
 npm install
 
-# Install backend dependencies
-cd server
-npm install
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your configuration
-
-# Run database migration
-npm run migrate
-
-# Start backend server (in server directory)
-npm run dev
-
-# Start frontend (in root directory)
-cd ..
+# Start development server
 npm run dev
 
 # Open http://localhost:5173 in your browser
@@ -75,43 +62,30 @@ npm test             # Run backend tests
 
 ## 🌐 Deployment
 
-### Hybrid Architecture Deployment
+### Netlify Serverless Architecture
 
-The app now requires both frontend and backend deployment:
+The app is deployed as a serverless application on Netlify with Netlify Functions and Neon PostgreSQL:
 
-#### Frontend (Static Site)
-**Recommended: Netlify/Vercel**
+#### Quick Deploy
 ```bash
-# Build frontend
+# Build and deploy to Netlify
 npm run build
-# Deploy dist/ folder to static hosting
+netlify deploy --prod
 ```
 
-#### Backend (API Server)
-**Recommended: Railway/Render/Fly.io**
+#### Environment Variables (Netlify Dashboard)
 ```bash
-# From server/ directory
-npm run build
-# Deploy with environment variables:
-# - JWT_SECRET
-# - DATABASE_URL (PostgreSQL for production)
-# - ALLOWED_ORIGINS
+NETLIFY_DATABASE_URL=postgresql://neondb_owner:password@host/neondb
+JWT_SECRET=your-secure-jwt-secret-256-bits
+NODE_ENV=production
+VITE_API_URL=/.netlify/functions
 ```
 
-#### Environment Variables
-```bash
-# Backend (.env)
-JWT_SECRET=your-secure-jwt-secret
-JWT_EXPIRES_IN=7d
-PORT=3001
-ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
-DATABASE_URL=postgresql://user:pass@host:port/db
-```
-
-#### Production Database
-- **Development**: SQLite (included)
-- **Production**: PostgreSQL (recommended)
-- **Managed Options**: Supabase, PlanetScale, Neon
+#### Architecture
+- **Frontend**: Static site hosted on Netlify CDN
+- **Backend**: Netlify Functions (serverless)
+- **Database**: Neon PostgreSQL (serverless)
+- **Benefits**: Auto-scaling, pay-per-use, integrated deployment
 
 ## 🏗️ Project Structure
 
@@ -197,10 +171,10 @@ journalfor.me/
 - **Web App Manifest**: PWA configuration
 
 ### Backend
-- **Node.js + Express**: RESTful API server
+- **Netlify Functions**: Serverless API endpoints
+- **Neon PostgreSQL**: Serverless database with auto-scaling
 - **JWT Authentication**: Secure token-based auth
 - **bcrypt**: Password hashing and validation
-- **SQLite/PostgreSQL**: Database with better-sqlite3/pg
 
 ### Development Tools
 - **ESLint**: Code linting and style enforcement

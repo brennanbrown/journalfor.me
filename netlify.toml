@@ -6,11 +6,11 @@
   publish = "dist"
   
   # Install dependencies and build
-  command = "npm ci && npm run build"
+  command = "npm install && npm run build"
 
 [build.environment]
   # Node.js version
-  NODE_VERSION = "18"
+  NODE_VERSION = "20"
   # API URL for production - will be updated to Netlify Functions
   VITE_API_URL = "/.netlify/functions"
 
@@ -28,7 +28,7 @@
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
     
     # Content Security Policy for PWA
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' /.netlify/functions; worker-src 'self'; manifest-src 'self'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.netlify.app https://journalforme.netlify.app/.netlify/functions; worker-src 'self'; manifest-src 'self'"
     
     # Other security headers
     X-Frame-Options = "DENY"
