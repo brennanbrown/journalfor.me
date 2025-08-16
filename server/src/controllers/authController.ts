@@ -1,9 +1,13 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import db from '../database/sqlite-connection';
 import { v4 as uuidv4 } from 'uuid';
-import { AuthRequest, AuthResponse, ApiResponse } from '../types';
+import db from '../database/sqlite-connection.js';
+import pool from '../database/postgres-connection.js';
+import { ApiResponse } from '../types/index.js';
+
+// Use PostgreSQL in production, SQLite in development
+const isProduction = process.env.NODE_ENV === 'production';
 
 interface RegisterRequest {
   email: string;

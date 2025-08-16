@@ -1,11 +1,3 @@
-import { Pool } from 'pg';
-import dotenv from 'dotenv';
-
-dotenv.config();
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-});
-
-export default pool;
+// Re-export the SQLite connection for now
+// Production PostgreSQL will be handled in controllers
+export { default } from './sqlite-connection.js';
